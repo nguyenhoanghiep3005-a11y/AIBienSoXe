@@ -2,104 +2,69 @@
 
 @section('content')
 <style>
-   /* TỔNG THỂ THANH TAB HIỆN ĐẠI */
-.nav-tabs {
-    display: flex !important;
-    flex-wrap: nowrap !important;
-    border-bottom: 2px solid #ebeef5; /* Đường gạch dưới thanh mảnh */
-    margin-bottom: 25px;
-}
+    /* Tab hiện đại không bị nhảy dòng */
+    .nav-tabs { display: flex !important; flex-wrap: nowrap !important; border-bottom: 2px solid #dee2e6; background: #fff; border-radius: 8px 8px 0 0; }
+    .nav-tabs .nav-link { font-size: 13px; font-weight: 600; color: #5a5e66 !important; padding: 12px 20px; border: 1px solid #ddd; background: #f8f9fa; }
+    .nav-tabs .nav-link.active { color: #fff !important; background: linear-gradient(135deg, #336699, #4a90e2) !important; border: none; }
 
-.nav-tabs .nav-item {
-    margin-bottom: -2px; /* Đè lên đường border của tổng thể */
-}
+    /* Khung nhận diện viền đỏ */
+    .group-box { border: 1px solid #f5c6cb; border-radius: 8px; padding: 25px 15px 15px 15px; margin-top: 25px; position: relative; background: #fff; }
+    .group-title { position: absolute; top: -14px; left: 15px; background: #fff; padding: 0 10px; color: #a94442; font-weight: bold; }
 
-.nav-tabs .nav-link {
-    font-size: 14px;
-    font-weight: 600;
-    color: #909399 !important; /* Màu xám trung tính cho tab chưa chọn */
-    background: #f5f7fa; /* Nền xám rất nhạt */
-    border: 1px solid #e4e7ed;
-    border-radius: 8px 8px 0 0; /* Bo góc trên */
-    padding: 12px 20px;
-    margin-right: 8px;
-    transition: all 0.3s ease; /* Hiệu ứng mượt khi di chuột */
-    white-space: nowrap;
-}
-
-/* KHI DI CHUỘT QUA TAB */
-.nav-tabs .nav-link:hover {
-    color: #336699 !important;
-    background: #edf2f7;
-    border-color: #dcdfe6;
-}
-
-/* TAB ĐANG ĐƯỢC CHỌN (ACTIVE) */
-.nav-tabs .nav-link.active {
-    color: #ffffff !important; /* Chữ trắng trên nền xanh */
-    background: linear-gradient(135deg, #336699, #4a90e2) !important; /* Đổ màu gradient xanh */
-    border-color: #336699 !important;
-    box-shadow: 0 4px 12px rgba(51, 102, 153, 0.3); /* Đổ bóng cho tab nổi bật */
-}
-
-/* Fix lỗi chữ tàng hình trên Tab chưa chọn */
-#home-tab:not(.active) {
-    color: #5a5e66 !important;
-}
+    /* Khung Preview Camera/Ảnh */
+    .preview-container { width: 100%; height: 300px; background: #000; border-radius: 10px; overflow: hidden; position: relative; display: flex; align-items: center; justify-content: center; }
+    video, img { width: 100%; height: 100%; object-fit: contain; }
+    
+    /* Biển số khung xanh */
+    .plate-badge { background: #28a745; color: #fff; padding: 5px 15px; border-radius: 6px; font-weight: bold; display: inline-block; font-size: 1rem; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
 </style>
 
 <div class="row">
     <div class="col-md-6 mb-4">
         <div class="bg-white p-3 border rounded shadow-sm">
-            <ul class="nav nav-tabs" id="parkingTab" role="tablist">
-                <li class="nav-item">
-                    <a class="nav-link active" id="camera-tab" data-toggle="tab" href="#camera-content" role="tab">Nhận diện Camera</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" id="image-tab" data-toggle="tab" href="#image-content" role="tab">Nhận diện biển số xe bằng hình ảnh</a>
-                </li>
+            <ul class="nav nav-tabs shadow-sm" id="parkingTab" role="tablist">
+                <li class="nav-item"><a class="nav-link active" data-toggle="tab" href="#image-tab"><i class="fas fa-image mr-1"></i> Nhận diện bằng hình ảnh</a></li>
+                <li class="nav-item"><a class="nav-link" data-toggle="tab" href="#camera-tab"><i class="fas fa-video mr-1"></i> Nhận diện Camera</a></li>
             </ul>
 
             <div class="mt-3">
-                <label class="font-weight-bold mb-1">Chọn thông tin xe:</label>
-                <select class="form-control">
-                    <option>Xe máy - Sáng - 5000 (05:00 - 12:59)</option>
-                    <option>Ô tô - Đêm - 300000 (00:00 - 04:59)</option>
+                <label class="font-weight-bold small">Loại xe & Giá tiền:</label>
+                <select id="vehicleType" class="form-control mb-3">
+                    <option>Xe máy - Ngày - 5000</option>
+                    <option>Ô tô - Ngày - 20000</option>
                 </select>
-            </div>
 
-            <div class="group-border">
-                <span class="group-title">Thông tin nhận diện biển số xe thủ công</span>
-                
-                <div class="tab-content">
-                    <div class="tab-pane fade show active" id="camera-content" role="tabpanel">
-                        <div class="border bg-light mb-3" style="height: 250px; display: flex; align-items: center; justify-content: center;">
-                            <img src="https://via.placeholder.com/400x300?text=Camera+Preview" class="img-fluid" style="max-height: 100%;">
+                <div class="group-box shadow-sm">
+                    <span class="group-title text-uppercase small">Xử lý nhận diện</span>
+                    
+                    <div class="tab-content">
+                        <div class="tab-pane fade show active" id="image-tab">
+                            <input type="file" id="inputImage" class="form-control-file border p-1 mb-2 bg-light rounded">
+                            <div class="preview-container mb-3">
+                                <img id="previewImage" src="" style="display:none;">
+                                <div id="placeholder" class="text-white-50 text-center"><i class="fas fa-upload fa-2x"></i><br>Chọn ảnh để xem trước</div>
+                            </div>
+                            <button type="button" onclick="recognizePlate('{{ route('parking.recognize') }}')" class="btn btn-info btn-block font-weight-bold py-2"><i class="fas fa-search mr-1"></i> NHẬN DIỆN NGAY</button>
                         </div>
-                        <label class="small">Chọn hình thức nhận diện:</label>
-                        <select class="form-control mb-2">
-                            <option>Nhận diện bằng camera laptop</option>
-                        </select>
-                        <button class="btn btn-success font-weight-bold">Bắt đầu</button>
-                        <button class="btn btn-danger font-weight-bold ml-1">Tắt Camera</button>
+
+                        <div class="tab-pane fade" id="camera-tab">
+                            <div class="preview-container mb-3">
+                                <video id="videoElement" autoplay playsinline style="display:none;"></video>
+                                <div id="camPlaceholder" class="text-white-50 text-center"><i class="fas fa-video-slash fa-2x"></i><br>Camera đang tắt</div>
+                            </div>
+                            <div class="d-flex mb-2">
+                                <button type="button" id="btnStartCamera" onclick="startCamera()" class="btn btn-success flex-fill mr-1 font-weight-bold">BẬT CAM</button>
+                                <button type="button" id="btnStopCamera" onclick="stopCamera()" class="btn btn-danger flex-fill ml-1 font-weight-bold" disabled>TẮT CAM</button>
+                            </div>
+                            <button type="button" onclick="captureAndRecognize()" class="btn btn-primary btn-block font-weight-bold py-2">CHỤP & NHẬN DIỆN</button>
+                        </div>
                     </div>
 
-                    <div class="tab-pane fade" id="image-content" role="tabpanel">
-                        <label class="small">Chọn hình ảnh biển số:</label>
-                        <input type="file" class="form-control-file border p-2 mb-2">
-                        <button class="btn btn-info text-white font-weight-bold"><i class="fas fa-search"></i> Nhận diện biển số</button>
-                        <div class="border mt-2 bg-light text-center" style="height: 200px;">
-                            <img src="https://via.placeholder.com/400x300?text=Selected+Image" class="img-fluid h-100">
-                        </div>
+                    <div class="mt-4 pt-3 border-top text-center">
+                        <label class="small font-weight-bold">BIỂN SỐ KẾT QUẢ:</label>
+                        <input type="text" id="resultInput" class="form-control border-primary text-primary font-weight-bold text-center mb-3" style="background: #f0f7ff; font-size: 1.6rem;"  placeholder="--- ---">
+                        <button type="button" onclick="addPlateToTable()" class="btn btn-warning font-weight-bold text-white w-100 py-3 shadow">XÁC NHẬN VÀ LƯU XUỐNG BẢNG</button>
                     </div>
-                </div>
-
-                <div class="mt-4">
-                    <label class="small mb-1">Ghi chú (nếu không nhận dạng được):</label>
-                    <input type="text" class="form-control mb-3">
-                    <label class="small mb-1">Biển số vừa nhận diện được:</label>
-                    <input type="text" class="form-control border-primary text-primary font-weight-bold" style="background: #eef;" value="29C1-999.99" >
-                    <button class="btn btn-warning mt-3 font-weight-bold text-white w-100">XÁC NHẬN VÀ LƯU</button>
                 </div>
             </div>
         </div>
@@ -107,37 +72,25 @@
 
     <div class="col-md-6">
         <div class="bg-white border rounded shadow-sm overflow-hidden">
-            <table class="table table-bordered mb-0 text-center table-sm">
-                <thead class="bg-light">
+            <table id="parkingTable" class="table table-bordered mb-0 text-center table-sm table-hover">
+                <thead class="bg-light text-uppercase small font-weight-bold">
                     <tr>
-                        <th>Loại xe</th>
-                        <th>Biển số</th>
-                        <th>Vào</th>
-                        <th>Ra</th>
-                        <th>Giá</th>
-                        <th>Trạng thái</th>
+                        <th>Loại xe</th><th>Biển số</th><th>Thời gian vào</th><th>Trạng thái</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td>Ô tô</td>
-                        <td><div class="plate-box">51F70804</div><br><small>Chi tiết</small></td>
-                        <td>28/07/24<br>11:28</td>
-                        <td>--</td>
-                        <td>150k</td>
-                        <td><span class="status-badge bg-orange">Đang gửi</span></td>
-                    </tr>
-                    <tr>
-                        <td>Xe máy</td>
-                        <td><div class="plate-box">61T3-2222</div><br><small>Chi tiết</small></td>
-                        <td>28/07/24<br>11:26</td>
-                        <td>28/07/24<br>11:27</td>
-                        <td>5k</td>
-                        <td><span class="status-badge bg-blue">Đã trả</span></td>
-                    </tr>
-                </tbody>
+                    </tbody>
             </table>
         </div>
     </div>
 </div>
+
+<template id="rowTemplate">
+    <tr class="fade-in-row">
+        <td class="v-type" style="vertical-align: middle;"></td>
+        <td class="py-2" style="vertical-align: middle;"><div class="plate-badge v-plate"></div></td>
+        <td class="v-time" style="vertical-align: middle;"></td>
+        <td style="vertical-align: middle;"><span class="badge badge-warning text-white px-2 py-1">ĐANG GỬI</span></td>
+    </tr>
+</template>
 @endsection

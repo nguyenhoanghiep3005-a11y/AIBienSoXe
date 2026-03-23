@@ -11,15 +11,16 @@ return new class extends Migration
      *
      * @return void
      */
- public function up()
+    public function up()
 {
-    Schema::create('employees', function (Blueprint $table) {
+    Schema::create('users', function (Blueprint $table) {
         $table->id();
-        $table->string('full_name'); // Kiểm tra dòng này
-        $table->date('birthday')->nullable();
-        $table->string('gender')->nullable();
-        $table->string('address')->nullable();
-        $table->string('phone');
+        $table->string('name');
+        $table->string('email')->unique();
+        $table->timestamp('email_verified_at')->nullable();
+        $table->string('password');
+        $table->string('role')->default('user'); // Thêm cột quyền hạn nếu cần
+        $table->rememberToken();
         $table->timestamps();
     });
 }
@@ -31,6 +32,6 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('employees');
+        Schema::dropIfExists('users');
     }
 };
