@@ -52,14 +52,16 @@
             "dont-discover": []
         }
     },
-    "config": {
+"config": {
         "optimize-autoloader": true,
         "preferred-install": "dist",
         "sort-packages": true,
+        "platform-check": false,
+        "audit": {
+            "block-insecure": false
+        },
         "allow-plugins": {
             "pestphp/pest-plugin": true
         }
-    },
-    "minimum-stability": "stable",
-    "prefer-stable": true
+    }
 }
