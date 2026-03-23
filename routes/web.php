@@ -1,6 +1,5 @@
 <?php
+use App\Http\Controllers\ParkingController;
 
-use Illuminate\Support\Facades\Route;
-Route::middleware(['auth'])->group(function () {
-    Route::get('/lpr', [LprController::class, 'index'])->name('lpr.index');
-});
+Route::get('/', [ParkingController::class, 'index'])->name('parking.index');
+Route::post('/recognize', [ParkingController::class, 'recognize'])->name('parking.recognize');
