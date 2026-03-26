@@ -22,7 +22,7 @@ public function recognize(Request $request) {
         // Gửi ảnh sang Docker API
         $response = Http::attach(
             'file', file_get_contents($image), $image->getClientOriginalName()
-        )->post('http://127.0.0.1:8079/api/v1/recognize');
+        )->post('http://localhost:8001/api/v1/parking/check-in');
 
         if ($response->successful()) {
             $result = $response->json();
