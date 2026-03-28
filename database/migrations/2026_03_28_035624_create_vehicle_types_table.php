@@ -6,26 +6,18 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     *
-     * @return void
-     */
     public function up()
     {
-        Schema::create('price_configs', function (Blueprint $table) {
+        Schema::create('vehicle_types', function (Blueprint $table) {
             $table->id();
+            $table->string('name'); // Tên hiển thị: Ô tô, Xe máy...
+            $table->string('code')->unique(); // Mã code: OTO, XEMAY...
             $table->timestamps();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     *
-     * @return void
-     */
     public function down()
     {
-        Schema::dropIfExists('price_configs');
+        Schema::dropIfExists('vehicle_types');
     }
 };

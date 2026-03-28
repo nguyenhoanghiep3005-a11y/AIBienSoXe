@@ -9,20 +9,43 @@ class ParkingLog extends Model
 {
     use HasFactory;
 
+    // Khai báo các cột được phép thêm dữ liệu hàng loạt (Mass Assignment)
     protected $fillable = [
-        'user_id', 'location_id', 'license_plate', 'car_name',
-        'time_in', 'time_out', 'image_path', 'status'
+        'license_plate', 
+        'vehicle_type_id', 
+        'time_in', 
+        'image_in',
+        'time_out', 
+        'image_out', 
+        'status', 
+        'total_price', 
+        'note'
     ];
 
-    // Mối quan hệ: Một lịch sử thuộc về một người dùng
-    public function user()
+    // Ép kiểu dữ liệu tự động khi lấy từ Database ra
+    protected $casts = [
+        'time_in' => 'datetime',
+        'time_out' => 'datetime',
+        'total_price' => 'decimal:2',
+    ];
+
+    /**
+     * Mối quan hệ: Lịch sử gửi xe này thuộc về 1 Loại xe cụ thể (Ô tô, Xe máy,...)
+     */
+    public function vehicleType()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(VehicleType::class);
     }
 
-    // Mối quan hệ: Một lịch sử thuộc về một vị trí
-    public function location()
+    /**
+     * Accessor: Tự động tạo mã HTML badge trạng thái để dùng trực tiếp ngoài view Blade
+     * Cách dùng ngoài view: {!! $log->status_badge !!}
+     */
+    public function getStatusBadgeAttribute()
     {
-        return $this->belongsTo(Location::class);
+        if ($this->status === 'parking') {
+            return '<span class="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">Đang gửi xe</span>';
+        }
+        return '<span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold">Đã trả xe</span>';
     }
 }
