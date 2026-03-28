@@ -1,0 +1,21 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="512" height="512" rx="128" fill="#1E5666"/>
+  <rect x="34" y="34" width="444" height="444" rx="104" fill="#1B4350" stroke="#F8C14B" stroke-width="14"/>
+  <path d="M56 126L156 52H274L126 164L56 126Z" fill="#F8C14B"/>
+  <circle cx="406" cy="112" r="70" fill="#F8C14B"/>
+  <circle cx="406" cy="112" r="10" fill="#EF5A43"/>
+  <rect x="84" y="188" width="344" height="176" rx="36" fill="#EF5A43"/>
+  <rect x="84" y="188" width="344" height="26" fill="#F8C14B"/>
+  <rect x="110" y="220" width="88" height="64" rx="10" fill="#203A43"/>
+  <rect x="206" y="220" width="94" height="64" rx="10" fill="#203A43"/>
+  <rect x="308" y="220" width="94" height="64" rx="10" fill="#203A43"/>
+  <path d="M112 356C112 314.026 146.026 280 188 280H324C365.974 280 400 314.026 400 356V364H112V356Z" fill="#1E5666"/>
+  <circle cx="176" cy="364" r="34" fill="#F6E7CF" stroke="#203A43" stroke-width="12"/>
+  <circle cx="336" cy="364" r="34" fill="#F6E7CF" stroke="#203A43" stroke-width="12"/>
+  <path d="M152 310H360" stroke="#F8C14B" stroke-width="10" stroke-linecap="round"/>
+  <path d="M196 158V86" stroke="#EF5A43" stroke-width="12" stroke-linecap="round"/>
+  <path d="M224 158V86" stroke="#EF5A43" stroke-width="12" stroke-linecap="round"/>
+  <path d="M252 158V86" stroke="#EF5A43" stroke-width="12" stroke-linecap="round"/>
+  <text x="256" y="170" text-anchor="middle" fill="#F7E9D4" font-size="74" font-family="Segoe UI, Arial, sans-serif" font-weight="900" letter-spacing="8">NHH</text>
+  <text x="256" y="446" text-anchor="middle" fill="#F8C14B" font-size="34" font-family="Segoe UI, Arial, sans-serif" font-weight="700" letter-spacing="6">SMART PARKING</text>
+</svg>

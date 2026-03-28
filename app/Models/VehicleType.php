@@ -11,13 +11,17 @@ class VehicleType extends Model
 
     protected $fillable = ['name', 'code'];
 
-    // Quan hệ: 1 loại xe có nhiều cấu hình giá
+    /**
+     * Một loại xe có thể có nhiều cấu hình giá (theo khung giờ)
+     */
     public function priceConfigs()
     {
         return $this->hasMany(PriceConfig::class);
     }
 
-    // Quan hệ: 1 loại xe có nhiều lượt gửi
+    /**
+     * Một loại xe có thể có nhiều lượt ra vào
+     */
     public function parkingLogs()
     {
         return $this->hasMany(ParkingLog::class);
