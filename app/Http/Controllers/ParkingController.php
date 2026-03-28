@@ -4,62 +4,79 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
-// use App\Models\ParkingSession; // Mở comment này khi bạn đã có Model
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
+use App\Models\ParkingLog;
+use Carbon\Carbon;
 
 class ParkingController extends Controller
 {
     /**
-     * 1. Hiển thị trang giao diện, kèm theo Lịch sử & Tìm kiếm
+     * Hiển thị danh sách lịch sử xe ra vào
      */
     public function index(Request $request)
     {
-        // Khởi tạo query từ bảng ParkingSession
-        // $query = ParkingSession::query();
+        // Khởi tạo query và load relationship (nếu model có định nghĩa belongsTo VehicleType)
+        $query = ParkingLog::with('vehicleType');
 
-        // Nếu có nhập khóa tìm kiếm (biển số)
-        // if ($request->has('plate') && $request->plate != '') {
-        //     $query->where('plate_number', 'like', '%' . $request->plate . '%');
-        // }
+        // Tính năng tìm kiếm theo biển số
+        if ($request->has('plate') && $request->plate != '') {
+            $query->where('plate_number', 'like', '%' . $request->plate . '%');
+        }
 
-        // Lấy danh sách, sắp xếp mới nhất, phân trang 10 dòng/trang
-        // $sessions = $query->orderBy('created_at', 'desc')->paginate(10);
+        // Lấy danh sách, sắp xếp mới nhất lên đầu, phân trang 15 dòng/trang
+        $logs = $query->orderBy('created_at', 'desc')->paginate(15);
 
-        // Tạm thời truyền mảng rỗng nếu chưa có Model/Database
-        $sessions = [];
-
-        return view('admin.parking.index', compact('sessions'));
+        return view('parking.index', compact('logs'));
     }
 
     /**
-     * 2. Nhận ảnh từ giao diện, gọi API AI Check-in
+     * Xử lý cho xe vào (Check-in)
      */
     public function checkIn(Request $request)
     {
-        // Validate đảm bảo file upload lên là ảnh hợp lệ
+        // 1. Kiểm tra ảnh
         $request->validate([
-            'image' => 'required|image|mimes:jpeg,png,jpg|max:5120', // max 5MB
+            'image' => 'required|image|mimes:jpeg,png,jpg|max:5120'
         ]);
 
         try {
             $image = $request->file('image');
 
-            // Dùng HTTP Client của Laravel để gọi sang Server AI (Port 8001)
-            $response = Http::attach(
+            // 2. Lưu ảnh vào storage public (Nhớ chạy: php artisan storage:link)
+            $imagePath = $image->store('parking_images/checkin', 'public');
+
+            // 3. Gửi ảnh sang Server AI (Port 8001)
+            $response = Http::timeout(10)->attach(
                 'image', 
                 file_get_contents($image->getRealPath()), 
                 $image->getClientOriginalName()
             )->post('http://localhost:8001/api/v1/parking/check-in');
 
-            // Xử lý kết quả trả về từ Server AI
+            // 4. Xử lý kết quả AI
             if ($response->successful()) {
                 $aiResult = $response->json();
+                $plate = $aiResult['plate'] ?? null;
 
-                // TẠI ĐÂY: Bạn có thể code thêm logic lưu Database của Laravel
-                // ParkingSession::create([
-                //     'plate_number' => $aiResult['plate'],
-                //     'time_in' => now(),
-                //     'status' => 'Đang đỗ'
-                // ]);
+                if (!$plate) {
+                    return response()->json(['success' => false, 'message' => 'AI không tìm thấy biển số trong ảnh.'], 400);
+                }
+
+                // 5. Kiểm tra logic: Xe đã ở trong bãi chưa?
+                $isAlreadyIn = ParkingLog::where('plate_number', $plate)->where('status', 'in')->exists();
+                if ($isAlreadyIn) {
+                    return response()->json(['success' => false, 'message' => "Xe biển số $plate ĐANG Ở TRONG BÃI."], 400);
+                }
+
+                // 6. Lưu Database
+                $log = ParkingLog::create([
+                    'plate_number' => $plate,
+                    'time_in' => Carbon::now(),
+                    'status' => 'in',
+                    // 'image_in' => $imagePath, // Bỏ comment nếu DB của bạn có cột này
+                ]);
+
+                $aiResult['time_in'] = Carbon::parse($log->time_in)->format('d/m/Y H:i');
 
                 return response()->json([
                     'success' => true,
@@ -68,34 +85,29 @@ class ParkingController extends Controller
                 ]);
             }
 
-            return response()->json([
-                'success' => false, 
-                'message' => 'AI Server không thể nhận diện được',
-                'error' => $response->json()
-            ], 400);
+            Log::error('AI Check-in Error: ' . $response->body());
+            return response()->json(['success' => false, 'message' => 'Hệ thống AI không nhận diện được'], 400);
 
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false, 
-                'message' => 'Lỗi kết nối tới Server Nhận diện (AI đang tắt?)',
-                'error' => $e->getMessage()
-            ], 500);
+            Log::error('Check-in Exception: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Mất kết nối với Server AI.'], 500);
         }
     }
 
     /**
-     * 3. Nhận ảnh từ giao diện, gọi API AI Check-out
+     * Xử lý cho xe ra (Check-out)
      */
     public function checkOut(Request $request)
     {
         $request->validate([
-            'image' => 'required|image|mimes:jpeg,png,jpg|max:5120',
+            'image' => 'required|image|mimes:jpeg,png,jpg|max:5120'
         ]);
 
         try {
             $image = $request->file('image');
+            $imagePath = $image->store('parking_images/checkout', 'public');
 
-            $response = Http::attach(
+            $response = Http::timeout(10)->attach(
                 'image', 
                 file_get_contents($image->getRealPath()), 
                 $image->getClientOriginalName()
@@ -103,10 +115,29 @@ class ParkingController extends Controller
 
             if ($response->successful()) {
                 $aiResult = $response->json();
+                $plate = $aiResult['plate'] ?? null;
 
-                // TẠI ĐÂY: Logic cập nhật giờ ra và tính tiền vào Database
-                // $session = ParkingSession::where('plate_number', $aiResult['plate'])->whereNull('time_out')->first();
-                // $session->update(['time_out' => now(), 'status' => 'Đã ra', 'fee' => $aiResult['fee']]);
+                if (!$plate) {
+                    return response()->json(['success' => false, 'message' => 'AI không tìm thấy biển số trong ảnh.'], 400);
+                }
+
+                $log = ParkingLog::where('plate_number', $plate)->where('status', 'in')->first();
+
+                if (!$log) {
+                    return response()->json(['success' => false, 'message' => "Không tìm thấy xe $plate trong bãi!"], 404);
+                }
+
+                $fee = $aiResult['fee'] ?? $this->calculateFee($log->time_in, Carbon::now());
+
+                $log->update([
+                    'time_out' => Carbon::now(),
+                    'status' => 'out',
+                    'fee' => $fee,
+                    // 'image_out' => $imagePath // Bỏ comment nếu DB của bạn có cột này
+                ]);
+
+                $aiResult['fee'] = $fee;
+                $aiResult['time_in'] = Carbon::parse($log->time_in)->format('d/m/Y H:i');
 
                 return response()->json([
                     'success' => true,
@@ -115,29 +146,20 @@ class ParkingController extends Controller
                 ]);
             }
 
-            return response()->json(['success' => false, 'message' => 'Lỗi từ AI Server'], 400);
+            Log::error('AI Check-out Error: ' . $response->body());
+            return response()->json(['success' => false, 'message' => 'Hệ thống AI từ chối'], 400);
 
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Lỗi máy chủ: ' . $e->getMessage()], 500);
+            Log::error('Check-out Exception: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Lỗi máy chủ.'], 500);
         }
     }
 
-    /**
-     * 4. Hàm test nhận diện lẻ (chỉ đọc biển số)
-     */
-    public function recognize(Request $request)
+    private function calculateFee($timeIn, $timeOut)
     {
-        $request->validate(['image' => 'required|image']);
-
-        try {
-            $image = $request->file('image');
-            $response = Http::attach(
-                'image', file_get_contents($image->getRealPath()), $image->getClientOriginalName()
-            )->post('http://localhost:8001/api/v1/recognize');
-
-            return response()->json($response->json());
-        } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Lỗi: ' . $e->getMessage()], 500);
-        }
+        $timeIn = Carbon::parse($timeIn);
+        $timeOut = Carbon::parse($timeOut);
+        $hours = $timeIn->diffInHours($timeOut) + 1; 
+        return $hours * 5000; // Mặc định 5k/giờ
     }
 }
